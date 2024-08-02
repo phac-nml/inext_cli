@@ -8,25 +8,28 @@ class query_strings:
         return f'query {{\n currentUser {{ email id }}      }}'  
     
     def query_individual_sample_by_puid(self,puid,after,first):
-        return f'sample(puid: "{puid}") {{ description id metadata name puid attachments(first: {first}, after: "{after}") {{ nodes {{ attachmentUrl byteSize createdAt filename id metadata puid }} pageInfo {{ endCursor hasNextPage hasPreviousPage startCursor }} }} project {{ puid }} }}'
+        return f'sample(puid: "{puid}") {{ createdAt updatedAt description id metadata name puid attachments(first: {first}, after: "{after}") {{ nodes {{ attachmentUrl byteSize createdAt filename id metadata puid }} pageInfo {{ endCursor hasNextPage hasPreviousPage startCursor }} }} project {{ puid }} }}'
     
+    def query_individual_sample_by_id(self,id,after,first):
+        return f'sample(id: "{id}") {{ createdAt updatedAt description id metadata name puid attachments(first: {first}, after: "{after}") {{ nodes {{ attachmentUrl byteSize createdAt filename id metadata puid }} pageInfo {{ endCursor hasNextPage hasPreviousPage startCursor }} }} project {{ puid }} }}'
+        
     def query_individual_sample_by_name(self,puid,sampleName,after,first):
-        return f'projectSample(projectPuid: "{puid}", sampleName: "{sampleName}") {{ description id metadata name puid attachments(after: "{after}", first: {first}) {{ totalCount nodes {{ attachmentUrl byteSize createdAt filename id metadata puid }} pageInfo {{ endCursor hasNextPage hasPreviousPage startCursor }} }} project {{ puid }} }}'
+        return f'projectSample(projectPuid: "{puid}", sampleName: "{sampleName}") {{ createdAt updatedAt description id metadata name puid attachments(after: "{after}", first: {first}) {{ totalCount nodes {{ attachmentUrl byteSize createdAt filename id metadata puid }} pageInfo {{ endCursor hasNextPage hasPreviousPage startCursor }} }} project {{ puid }} }}'
     
     def query_samples_by_group_id(self,id,after,first):
-        return f'samples(groupId: "{id}", after: "{after}", first: {first}) {{  totalCount nodes {{ id name puid }} pageInfo {{ endCursor hasNextPage hasPreviousPage startCursor }}      }} '
+        return f'samples(groupId: "{id}", after: "{after}", first: {first}) {{  totalCount nodes {{ createdAt updatedAt id name puid }} pageInfo {{ endCursor hasNextPage hasPreviousPage startCursor }}      }} '
 
     def query_project_by_puid(self,puid,after,first):
-        return f'project(puid: "{puid}") {{ description fullName fullPath id name path puid samples(after: "{after}", first: {first}) {{ totalCount nodes {{ id name puid }} pageInfo {{ endCursor hasNextPage hasPreviousPage startCursor }} }} }}'
+        return f'project(puid: "{puid}") {{ createdAt updatedAt description fullName fullPath id name path puid samples(after: "{after}", first: {first}) {{ totalCount nodes {{ id name puid }} pageInfo {{ endCursor hasNextPage hasPreviousPage startCursor }} }} }}'
     
     def query_group_by_puid(self,puid,after,first):
-        return f'group(puid: "{puid}") {{ description fullName fullPath id name path puid projects(after: "{after}", first: {first}) {{ totalCount nodes {{ id name puid }} pageInfo {{ endCursor hasNextPage hasPreviousPage startCursor }} }} }}'
+        return f'group(puid: "{puid}") {{ createdAt updatedAt description fullName fullPath id name path puid projects(after: "{after}", first: {first}) {{ totalCount nodes {{ id name puid }} pageInfo {{ endCursor hasNextPage hasPreviousPage startCursor }} }} }}'
     
     def query_projects(self,after,first):
-        return f'projects(after: "{after}", first: {first}) {{ totalCount nodes {{ id name puid  }} pageInfo {{ endCursor hasNextPage hasPreviousPage startCursor }} }}'
+        return f'projects(after: "{after}", first: {first}) {{ totalCount nodes {{ createdAt updatedAt id name puid  }} pageInfo {{ endCursor hasNextPage hasPreviousPage startCursor }} }}'
     
     def query_groups(self,after,first):
-        return f'groups(after: "{after}", first: {first}) {{ totalCount nodes {{ id name puid }} pageInfo {{ endCursor hasNextPage hasPreviousPage startCursor }} }}'
+        return f'groups(after: "{after}", first: {first}) {{ totalCount nodes {{ createdAt updatedAt id name puid }} pageInfo {{ endCursor hasNextPage hasPreviousPage startCursor }} }}'
     
     def mutation_update_sample_metadata(self,puid,metadata):
         return f'updateSampleMetadata(input: {{ metadata: {{{metadata}}}, samplePuid: "{puid}"}}) {{ clientMutationId errors status }}'
