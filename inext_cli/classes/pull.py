@@ -436,6 +436,5 @@ class pull:
            #to do
            pass
         else:
-            logging.error("You need to specify either id_type equal to user, sample, group, project")
-        
+            logging.error("You need to specify either id_type equal to user, sample, group, project")      
         pd.DataFrame.from_dict(self.format_attachment_index(),orient='index').to_csv(self.config.outputs.attachIndexFile,sep="\t",header=True,index=False)

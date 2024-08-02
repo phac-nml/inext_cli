@@ -28,4 +28,19 @@ class file_extensions:
             self.file_types = list(self.extensions.keys())
 
 
-
+@dataclass
+class file_type_regex():
+    """
+    Used to control access to the specific file pattern matching available to the user
+    """
+    assembly: str = ".fasta(.gz)?|.fna(.gz)|.fa(.gz)?|$"
+    fasta: str = ".fasta(.gz)?|.fna(.gz)|.fa(.gz)?|.ffn(.gz)?|.faa(.gz)?|$"
+    fastq: str = ".fastq(.gz)?|.fq(.gz)$"
+    json: str = ".json(.gz)?$"
+    genbank: str = ".gbk(.gz)?|.gbf(.gz)|.genbank(.gz)?|$"
+    csv: str = ".csv(.gz)$"
+    tsv: str = ".tsv(.gz)$"
+    text: str = ".txt(.gz)|.text(.gz)$"
+    json: str = ".json(.gz)|.js(.gz)$"
+    profile: str = ".locidex.report.profile.mlst.subtyping.json.gz$"
+    all: str = "."

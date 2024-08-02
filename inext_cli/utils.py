@@ -1,6 +1,4 @@
 import socket
-import logging
-import sys
 import os
 import pandas as pd
 from inext_cli.constants import FILE_EXTENSIONS
@@ -57,3 +55,4 @@ def concatonate_files(files):
         return pd.concat(dfs)
     else:
         return pd.DataFrame()
+

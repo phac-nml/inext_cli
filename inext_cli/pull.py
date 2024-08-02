@@ -201,6 +201,7 @@ def run(cmd_args=None):
                         outputs=worker_outputs,
                         skip_rows=skip_rows,
                         n_records = batch_size,
+                        n_threads = num_workers,
                         n_cursors=n_cursors,
                         skip_meta=True,
                         create=False,                                              

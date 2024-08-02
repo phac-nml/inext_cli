@@ -176,6 +176,8 @@ class push:
         sample_ids = []
         metadata = []
         for qname in data:
+            if len(data[qname]['metadata']) == 0:
+                continue
             query_names.append(qname)
             sample_ids.append(data[qname]['puid'])
             m = []
@@ -185,10 +187,8 @@ class push:
             if len(query_names) == self.batch_size:
                 r = gql_request(self.config)
                 query = self.query_builder.updateSamples(query_names, sample_ids, metadata)
-                print(query)
                 query = self.query_builder.render(query)
                 response = r.request(query)
-                print(response)
                 query_names = []
                 sample_ids = []
                 metadata = []
