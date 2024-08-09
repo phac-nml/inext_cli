@@ -23,6 +23,9 @@ class config:
     wait_time: int = 1
     timeout: int = 60
     batch_size: int = 100
+    download: bool = False
+    download_regex: str = "."
+    download_workers: int = 1
 
     
 

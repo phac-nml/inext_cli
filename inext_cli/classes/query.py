@@ -22,15 +22,23 @@ class query_strings:
     def query_project_by_puid(self,puid,after,first):
         return f'project(puid: "{puid}") {{ createdAt updatedAt description fullName fullPath id name path puid samples(after: "{after}", first: {first}) {{ totalCount nodes {{ id name puid }} pageInfo {{ endCursor hasNextPage hasPreviousPage startCursor }} }} }}'
     
+    
     def query_group_by_puid(self,puid,after,first):
         return f'group(puid: "{puid}") {{ createdAt updatedAt description fullName fullPath id name path puid projects(after: "{after}", first: {first}) {{ totalCount nodes {{ id name puid }} pageInfo {{ endCursor hasNextPage hasPreviousPage startCursor }} }} }}'
     
+    def query_sample_attachment(self,id):
+        return f'node(id: "{id}") {{ id ... on Attachment {{ attachmentUrl byteSize createdAt filename id metadata puid updatedAt }} }} '
+
+
     def query_projects(self,after,first):
         return f'projects(after: "{after}", first: {first}) {{ totalCount nodes {{ createdAt updatedAt id name puid  }} pageInfo {{ endCursor hasNextPage hasPreviousPage startCursor }} }}'
     
     def query_groups(self,after,first):
         return f'groups(after: "{after}", first: {first}) {{ totalCount nodes {{ createdAt updatedAt id name puid }} pageInfo {{ endCursor hasNextPage hasPreviousPage startCursor }} }}'
     
+    def query_attachment(self,id):
+        return f'node(id: "{id}") {{ id ... on Attachment {{ attachmentUrl byteSize createdAt filename id metadata puid updatedAt }} }} '
+
     def mutation_update_sample_metadata(self,puid,metadata):
         return f'updateSampleMetadata(input: {{ metadata: {{{metadata}}}, samplePuid: "{puid}"}}) {{ clientMutationId errors status }}'
 
@@ -42,6 +50,7 @@ class query_strings:
 
     def mutation_attach_file_to_sample(self,signedBlobIDs,puid):
         return f'attachFilesToSample(input: {{ files: {signedBlobIDs}, samplePuid: "{puid}" }}) {{ clientMutationId errors status }}'
+
 
 
 class query_constructor(query_strings):
@@ -63,7 +72,6 @@ class query_constructor(query_strings):
                     results.append(f'{qname}: {self.query_project_by_puid(puid=puids[idx],after=cursors[idx],first=first)}')
                 else:
                     results.append(f'{qname}: {self.query_group_by_puid(puid=puids[idx],after=cursors[idx],first=first)}')
-
         return f'query {{\n {"\n".join(results)}       }}'  
 
     def querySamples(self,id_type,query_names,cursors,sample_ids,project_puids=[],first=10):
@@ -76,9 +84,14 @@ class query_constructor(query_strings):
                 results.append(f'{qname}: {self.query_individual_sample_by_puid(after=cursors[idx],first=first,puid=sample_ids[idx]) }')
             else:
                 results.append(f'{qname}: {self.query_individual_sample_by_name(after=cursors[idx],first=first,sampleName=sample_ids[idx],puid=project_puids[project_puids]) }')
-        
         return f'query {{\n {"\n".join(results)}       }}'
     
+    def queryAttachements(self,query_names,ids):
+        results = []
+        for idx,qname in enumerate(query_names):
+            results.append(f'{qname}: {self.query_attachment(id=ids[idx]) }')
+        return f'query {{\n {"\n".join(results)}       }}'
+
     def createSamples(self,query_names, sample_ids,project_puids):
         results = []
         for idx,qname in enumerate(query_names):
@@ -103,6 +116,8 @@ class query_constructor(query_strings):
             results.append(f'{qname}: {self.mutation_attach_file_to_sample(puid=puids[idx],signedBlobIDs=signedBlobIDs[idx]) }')
         return f'mutation {{\n {"\n".join(results)}       }}'
 
+
     def render(self,query_string):
+        print(query_string)
         return gql(query_string)
 

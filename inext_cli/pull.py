@@ -2,7 +2,9 @@ from inext_cli.classes.pull import pull
 from inext_cli.classes.sample_sheet import sample_sheet
 from inext_cli.classes.config import config, analysisDir
 from inext_cli.classes.connect import conf_connect
+from inext_cli.classes.download import download, download_params
 from inext_cli.utils import concatonate_files, file_valid, get_line_count
+from inext_cli.constants import file_type_regex
 from dataclasses import asdict
 import json
 import os
@@ -13,6 +15,7 @@ from multiprocessing import Pool, cpu_count
 import pathlib
 import sys
 import shutil
+import glob
 
 def add_args(parser=None):
     if parser is None:
@@ -63,6 +66,7 @@ def run_pull(run_config,summary=False):
             logging.error("Warning there was an error querying your data, please check the error log")
             pass
 
+    
 
 
 
@@ -138,10 +142,8 @@ def run(cmd_args=None):
     except AttributeError:
         sys_num_cpus = cpu_count()
 
-    print(sys_num_cpus)
     if num_workers > sys_num_cpus:
         num_workers = sys_num_cpus
-    print(num_workers)
 
     batch_size = 1
     if 'batch_size' in input_config and input_config['batch_size'] != '':
@@ -162,10 +164,24 @@ def run(cmd_args=None):
     elif worker_num_records < 1:
         worker_num_records = 1
     
+    file_type = "all"
+    if 'file_type' in input_config and input_config['file_type'] != '':
+        file_type = input_config['file_type']
+    
+    file_types = asdict(file_type_regex())
+    download_regex = "."
+    if file_type in file_types:
+        download_regex = file_types[file_type]
+    else:
+        if input_config['download']:
+            print("Error you need to specify one of the following file types is download is enabled")
+            sys.exit()
+
 
     project_col = None
     if project_col in input_config and input_config['project_col'] != '':
         project_col = input_config['project_col']
+
 
     list_of_dfs = [ss.df.loc[i:i+worker_num_records-1,:] for i in range(0, n_query_ids,worker_num_records)]
     pool = Pool(processes=num_workers)
@@ -204,10 +220,12 @@ def run(cmd_args=None):
                         n_threads = num_workers,
                         n_cursors=n_cursors,
                         skip_meta=True,
-                        create=False,                                              
+                        create=False,   
+                        download= input_config['download'],
+                        download_regex = download_regex                                           
                         )
         results.append(pool.apply_async(run_pull, (run_config, )))
-    
+
     pool.close()
     pool.join()
     sys.stdout.flush()
@@ -223,18 +241,63 @@ def run(cmd_args=None):
         worker_outputs = asdict(worker_outputs)
         for rtype in files:
             f = worker_outputs[rtype]
-            if file_valid(f) and get_line_count(f) > 2:
+            if file_valid(f) and get_line_count(f) > 1:
                 files[rtype].append(f)
 
-    out_files = asdict(outputs)       
+    out_files = asdict(outputs) 
     for rtype in files:
         df = concatonate_files(files[rtype])
         if len(df) > 0:
             df.to_csv(out_files[rtype],sep="\t",header=True, index=False)
 
+    out_files = asdict(outputs)
+    #download attachments
+    if input_config['download']:
+        baseDir = analysis_parameters['outdir']
+        file_types = asdict(file_type_regex())
+        download_regex = "."
+        if file_type in file_types:
+            download_regex = file_types[file_type]
+        gql_config = config(input_path=None, 
+                        id_col= None,
+                        id_type=None,
+                        access = conf_connect(url=input_config['url'],token=input_config['token']),
+                        outputs=None,
+                        skip_rows=False,
+                        n_records = 0,
+                        n_threads =num_workers,
+                        n_cursors= 1,
+                        skip_meta=True,
+                        create=False,   
+                        download= False,
+                        download_regex = '.'                                        
+                        )
+        params = download_params(
+            file_path = out_files['attachIndexFile'],
+            sample_col = 'sample_puid',
+            filename_col = 'filename',
+            sub_folder_col = 'puid',
+            url_col = 'attachmentUrl',
+            baseDir = baseDir,
+            gid_col = 'id',
+            gql_config = gql_config,
+            manifestFile = os.path.join(baseDir,"manifest.txt"),
+            logFile = os.path.join(baseDir,"run.log"),
+            errorFile = os.path.join(baseDir,"err.txt"),
+            file_types = download_regex,
+            n_workers = num_workers,
+            folder_size= 5000,
+            delimeter= os.sep )
+        download(params)
+
+
     #clean up 
     for worker_outputs in worker_files:
-        baseDir = worker_outputs.baseDir 
+        baseDir = worker_outputs.baseDir
+        if input_config['download']:
+            file_names = os.listdir(worker_outputs.dataDir)
+            for file_name in file_names:
+                shutil.move(os.path.join(worker_outputs.dataDir, file_name), outputs.dataDir)
         if os.path.isdir(baseDir):
             shutil.rmtree(worker_outputs.baseDir)
 

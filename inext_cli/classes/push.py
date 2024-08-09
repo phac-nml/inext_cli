@@ -134,9 +134,6 @@ class push:
         batch_projects = self.split_list(project_ids, self.batch_size)
         batch_query_names = self.split_list(query_names,self.batch_size)
 
-        print(sample_ids)
-        print(project_ids)
-        print(query_names)
 
 
         for idx,bs in enumerate(batch_samples):

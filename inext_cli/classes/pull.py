@@ -3,9 +3,13 @@ from inext_cli.classes.sample_sheet import sample_sheet
 from inext_cli.classes.query import query_constructor
 from inext_cli.utils import validate_connection
 from inext_cli.classes.connect import gql_request
+from inext_cli.classes.download import download, download_params
 import pandas as pd
 from gql.transport.exceptions import TransportQueryError
 import os
+import re
+import requests
+from multiprocessing import Pool, cpu_count
 
 class pull:
     status = True
@@ -30,6 +34,10 @@ class pull:
         self.err_fh = open(self.config.outputs.errorFile,'w')
         self.query_builder = query_constructor()
         self.skip_meta = self.config.skip_meta
+        self.download = self.config.download
+        self.download_dir = self.config.outputs.dataDir
+        self.download_regex = self.config.download_regex
+        self.download_workers = self.config.download_workers
         
     
         ss = sample_sheet(sample_sheet=self.config.input_path,id_col=self.config.id_col, 
@@ -99,9 +107,10 @@ class pull:
             data[qname]['hasNextPage'] = response[qname]['attachments']['pageInfo']['hasNextPage']
             data[qname]['cursor'] = response[qname]['attachments']['pageInfo']['endCursor']
 
+
             for node in response[qname]['attachments']['nodes']:
-                puid = node['puid']
-                data[qname]['attachments'][puid] = {
+                id = node['id']
+                data[qname]['attachments'][id] = {
                     'attachmentUrl':node['attachmentUrl'],
                     'byteSize':node['byteSize'],
                     'createdAt':node['createdAt'],
@@ -110,6 +119,7 @@ class pull:
                     'metadata':node['metadata'],
                     'puid':node['puid']
                 }
+
 
         return data
 
@@ -129,7 +139,7 @@ class pull:
     def split_list(self,lst,n):
         return [lst[i:i + n] for i in range(0, len(lst), n)]
 
-    def find_sample_batch_size(self,id_type,query_names,project_puids,sample_ids,first):
+    def find_sample_batch_size(self,id_type,query_names,project_puids,sample_ids,first=1):
         batch_size = self.batch_size
         #lowering the number of cursors is less efficient than shrinking the number of records
         batch_size = self.batch_size
@@ -168,9 +178,12 @@ class pull:
                 tryAgain = self.errorHandler(errors)
             else:
                 tryAgain = False
+                break
             
             num_records = int(len(qb) /2)
-
+            self.first = int(self.first /2)
+            if self.first < 1:
+                self.first = 1
             if num_records < 1:
                 break
 
@@ -180,8 +193,10 @@ class pull:
             cb = cb[0:num_records+1]
 
         self.batch_size = num_records
+
         if len(errors) == 0:
             return True
+
         return False
 
     
@@ -195,13 +210,13 @@ class pull:
             for idx,value in enumerate(query_names):
                 query_names.append(f'idx_{idx}')
         data = {}
-        self.first = 1
-        first = self.first
+        self.first = 10
         #No batch size could satisfy the query complexity
         if not self.find_sample_batch_size(id_type,query_names,project_puids,sample_ids,first):
             print(f"No batch size worked: batch:{self.batch_size}, cursors:{self.first}")
             return data
-
+        
+        first = self.first
         batch_size = self.batch_size
         query_name_batches = self.split_list(query_names,batch_size)
         sample_batches = self.split_list(sample_ids,batch_size)
@@ -210,9 +225,7 @@ class pull:
             project_batches = self.split_list(project_puids,batch_size)
         else:
             project_batches = [[]]*len(sample_batches)
-        
-        
-        #cursors = [['']*len(query_name_batches)]*len(sample_batches)
+
         cursors = [[]]*len(sample_batches)
         for idx,sb in enumerate(sample_batches):
             cursors[idx] = ['']*len(sb)
@@ -236,7 +249,6 @@ class pull:
                                     sample_ids=sb,project_puids=pb,first=first)
                 errors = response.errors
                 if len(errors) > 0:
-                    print(errors)
                     return data
                 data = self.parse_sample_response(data=data,response=response.response,id_type=id_type)
                 pageInfo = self.get_pagination(data=data)
@@ -250,7 +262,9 @@ class pull:
         else:
             namespace_key = 'projects'
         for qname in response:
-            if qname not in data:
+            if response[qname] is None:
+                continue
+            elif qname not in data:
                 data[qname] = {
                     'puid':response[qname]['puid'],
                     'id':response[qname]['id'],
@@ -292,11 +306,13 @@ class pull:
     def retrieve_namespace_data(self,puids,first,namespaceType):
         data = {}
         response = self.get_samples_by_namespace(query_names=puids, namespaceType=namespaceType, puids=puids,cursors=['']*len(puids),first=first)
+        print(response)
         errors = response.errors
         tryAgain = False
         if len(errors) > 0:
             tryAgain = self.errorHandler(errors)
         while tryAgain:
+            print(tryAgain)
             first = self.first
             response = self.get_samples_by_namespace(query_names=puids, namespaceType=namespaceType, puids=puids,cursors=['']*len(puids),first=first)
             errors = response.errors
@@ -331,6 +347,11 @@ class pull:
     
     def process_namespace(self,puids,first,namespaceType):
         if namespaceType == 'group':
+            project_puids = []
+        else:
+            project_puids = puids
+
+        if namespaceType == 'group':
             self.group_data = self.retrieve_namespace_data(puids=puids,first=first,namespaceType=namespaceType)  
             puids = set()
             data = {
@@ -342,21 +363,24 @@ class pull:
                 data['project_puid'] += self.group_data[group_id]['projects']
                 puids = puids | self.group_data[group_id]['projects']
             puids = sorted(list(puids))
+            project_puids = puids
             pd.DataFrame.from_dict(data,orient='columns').to_csv(self.config.outputs.groupIndexFile,sep="\t",header=True,index=False)
-        self.project_data = self.retrieve_namespace_data(puids=list(puids),first=first,namespaceType='project')
-        
-        samples = {}
-        for project_id in self.project_data:
-            for id in self.project_data[project_id]['samples']:
-                samples[id] = project_id
 
-        sample_ids=list(samples.keys())
-        project_puids=list(samples.values())
-        self.sample_data = {}
-        if first != self.first:
-            first = self.first
-        pd.DataFrame.from_dict(data={'project_puid':project_puids,'sample_puid':sample_ids},orient='columns').to_csv(self.config.outputs.projectIndexFile,sep="\t",header=True,index=False)
-        self.sample_data.update(self.retrieve_sample_data(id_type='puid',sample_ids=sample_ids,project_puids=project_puids,first=first))
+        if len(project_puids) > 0:
+            self.project_data = self.retrieve_namespace_data(puids=list(project_puids),first=first,namespaceType='project')
+            samples = {}
+            for project_id in self.project_data:
+                for id in self.project_data[project_id]['samples']:
+                    samples[id] = project_id
+
+            sample_ids=list(samples.keys())
+            project_puids=list(samples.values())
+            self.sample_data = {}
+            if first != self.first:
+                first = self.first
+            pd.DataFrame.from_dict(data={'project_puid':project_puids,'sample_puid':sample_ids},orient='columns').to_csv(self.config.outputs.projectIndexFile,sep="\t",header=True,index=False)
+        
+            self.sample_data.update(self.retrieve_sample_data(id_type='puid',sample_ids=sample_ids,project_puids=project_puids,first=first))
 
 
     def process_sample(self,id_type,sample_ids,project_puids,first):
@@ -425,6 +449,7 @@ class pull:
                     'puid':r['puid']
                 }
         return data
+
 
     def run(self,ids,id_type,first=10,project_puids=[]):
         self.get_user()

@@ -45,11 +45,11 @@ class gql_connection:
         e = {}
         if not isinstance(d, dict) or len(d) == 0:
             return e
-        
         key = list(d.keys())[0]
         if isinstance(d[key],Exception):
             return d
-        if 'errors' in d[key]:
+        
+        if d[key] is not None and 'errors' in d[key]:
             e = d[key]['errors']
         return e
 

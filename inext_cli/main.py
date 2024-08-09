@@ -5,12 +5,13 @@ import logging
 import os
 from inext_cli.classes.config import config, analysisDir
 from inext_cli.utils import is_url_reachable
-from . import push, pull
+from . import push, pull, download
 
 
 tasks = {
     'push': (push, 'Retrieve data from IRIDA Next'),
-    'pull': (pull, 'Submit data to IRIDA Next')
+    'pull': (pull, 'Submit data to IRIDA Next'),
+    'download': (download,'Download files from IRIDA Next')
 }
 
 def main(argv=None):

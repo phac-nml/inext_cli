@@ -13,7 +13,7 @@ class sample_sheet:
             return
         
         line_count = get_line_count(sample_sheet)
-        if line_count < 2:
+        if line_count < 1:
             self.status = False
             logging.critical("Error input file {} is not valid since it has fewer than 2 lines".format(sample_sheet))
             return
