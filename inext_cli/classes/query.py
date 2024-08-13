@@ -118,6 +118,5 @@ class query_constructor(query_strings):
 
 
     def render(self,query_string):
-        print(query_string)
         return gql(query_string)
 

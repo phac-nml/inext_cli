@@ -177,7 +177,8 @@ class download:
             r.append(x.get())
         
         dfs = []
-        for idx,df in enumerate(self.subsets):
+        for idx,df_index in enumerate(self.subsets):
+            df = self.subsets[df_index].copy(deep=True)
             response = r[idx]
             status = []
             error = []

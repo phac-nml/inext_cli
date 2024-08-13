@@ -253,7 +253,7 @@ def run(cmd_args=None):
     out_files = asdict(outputs)
     #download attachments
     if input_config['download']:
-        baseDir = analysis_parameters['outdir']
+        baseDir = outputs.dataDir
         file_types = asdict(file_type_regex())
         download_regex = "."
         if file_type in file_types:
