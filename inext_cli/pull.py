@@ -30,7 +30,7 @@ def add_args(parser=None):
     parser.add_argument("--id_type", type=str, required=False, help="specify what type of id is in the sample sheet (sample, group, project, user)",default='sample')
     parser.add_argument("--file_type", type=str, required=False, help="Retrieve this type of file if download is toggled (all, fasta, fastq, json, text, csv, tsv, genbank)",default='all')
     parser.add_argument("--skip_rows", type=int, required=False, help="Skip this many rows before the header line",default=0)
-    parser.add_argument('--download', required=False, help='Create samples based on sample name',
+    parser.add_argument('--download', required=False, help='Download files',
                         action='store_true')
     parser.add_argument("--workers", type=int, required=False, help="Number of workers to split the task into",default=1)
     parser.add_argument('-V', '--version', action='version', version="%(prog)s " + __version__)

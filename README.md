@@ -45,8 +45,9 @@ Install the latest master branch version directly from Github:
 
 IRIDA Next CLI uses the following commands:
 
-1. **push** - query a set of ORFs, and genes against a database to produce a sequence store for downstream processing
-2. **pull** - extract loci from a genome based on a locidex database
+1. **push** - Create samples, upload files, attach files to samples, update sample metadata based on a sample sheet
+2. **pull** - Pull sample metadata, files bases on IRIDA persistent unique identifiers for groups, projects and samples, in addition to project and sample name based on a sample sheet
+2. **download** - Download files associated with IRIDA Next records based on the attachment file produces by pull
 
 ## Configuration and Settings
 
@@ -85,58 +86,99 @@ All files for uploading to IRIDA Next should be compressed using gzip. Push will
 
 EXAMPLE: Pull all user project, group and sample metadata but skip files :
 
-		inext_cli push 
+		inext_cli pull
 
 EXAMPLE: Pull metadata and fasta files for a set of samples:
 
-		inext_cli push 
+		inext_cli pull --download --file_type fasta
 
 EXAMPLE: Pull metadata and fastq files for a set of samples:
 
-		inext_cli push 
+		inext_cli pull --download --file_type fastq 
 
 #### Output
 ```
 {out folder name} 
 └──data
-    ├── {IRIDA Next Persistent Identifier 1}
-        ├── 0
-        ├── ...
-        └── n
-    ├── ....
-    └── {IRIDA Next Persistent Identifier N}
+    ├──{Batch #}
+        ├── {IRIDA Next Persistent Identifier Sample 1}
+                ├── {IRIDA Next Persistent Identifier Attachment 1}
+                    ├── sample_1_1.fastq.gz
+                    └──sample_1_2.fastq.gz
+                ├── ...
+                └── n
+        ├── ....
+        ├── {IRIDA Next Persistent Identifier Sample N}
+        └── manifest.txt
 ├── err.log    
 ├── run.log
-├── files.tsv
-├── projects.tsv
-├── groups.tsv
-└── samples.tsv
+├── attachIndex.tsv
+├── projectIndex.tsv
+├── groupIndex.tsv
+└── samplesIndex.tsv
+```
+samples.tsv
+```
+
+### Download
+
+#### Input
+
+EXAMPLE: Pull all user project, group and sample metadata but skip files :
+
+		inext_cli download
+
+EXAMPLE: Pull files for a set of samples:
+
+		inext_cli download
+
+EXAMPLE: Pull files for a set of samples:
+
+		inext_cli download
+
+#### Output
+```
+{out folder name} 
+├──{Batch #}
+    ├── {IRIDA Next Persistent Identifier Sample 1}
+            ├── {IRIDA Next Persistent Identifier Attachment 1}
+                ├── sample_1_1.fastq.gz
+                └──sample_1_2.fastq.gz
+            ├── ...
+            └── n
+    ├── ....
+    ├── {IRIDA Next Persistent Identifier Sample N}
+    └── manifest.txt
+├── err.log    
+└── run.log
 ```
 
 
 
 ### config.json
 
-This [JSON](https://www.json.org/json-en.html) file can be used in place of specifying each parameter on the commandline. The behaviour is that command line arguments will *NOT* override parameters set in the configuration file. So only set the fields
+This [JSON](https://www.json.org/json-en.html) file can be used in place of specifying each parameter on the command line. The behaviour is that command line arguments will *NOT* override parameters set in the configuration file. So only set the fields
 that you want to be persistent in the configuration file.
 
 ```
         {
-            "token": "",
             "url": "",
-            "outputs": "",
-            "n_records": 1,
-            "n_threads": 1, 
-            "metadata_cols": "", 
-            "id_col":"",
-            "file_cols": "", 
-            "project_code": "", 
-            "project_col": "",
-            "skip_rows": 0, 
-            "create": true,
+            "token": "",
+            "id_col": "irida_next_project_code",
+            "id_type": "project",
+            "file_type": "all",
+            "skip_rows": 0,
+            "download": true,
+            "workers": 10,
+            "n_cursors": 100,
+            "batch_size": 100,
+            "file_cols": "",
+            "metadata_cols":"",
+            "create": false,
             "skip_meta": false,
-            "ignore_empty": true
-
+            "project_code": "",
+            "project_col": "",
+            "download_workers":10
         }
 ```
 
