@@ -47,18 +47,3 @@ def main(argv=None):
 if __name__ == '__main__':
     main()
 
-    baseDir = ''
-    outDirs = analysisDir(baseDir=baseDir, dataDir=os.path.join(baseDir,'__data'), \
-                          logFile=os.path.join(baseDir,'run.log'), \
-                          errorFile=os.path.join(baseDir,'error.log'), \
-                          resultsFile=os.path.join(baseDir,"results.json"))
-    
-    conf = config(AUTH_TOKEN='amFtZXMucm9iZXJ0c29uQHBoYWMtYXNwYy5nYy5jYTpkanhjZ3JqdV9WUlVvRnNZQUxQQg==', \
-                  URL='https://gsp-dev.nml-lmn.phac-aspc.gc.ca/api/graphql', \
-                  outDirs=outDirs)
-    
-    connection_status = is_url_reachable(url=conf.URL)
-
-    #d = dataManifest(QUERY_URL,AUTH_TOKEN,QUERIES,n_records=1)
-    #print(d.groups)
-
