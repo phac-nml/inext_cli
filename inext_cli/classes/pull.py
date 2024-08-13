@@ -306,13 +306,11 @@ class pull:
     def retrieve_namespace_data(self,puids,first,namespaceType):
         data = {}
         response = self.get_samples_by_namespace(query_names=puids, namespaceType=namespaceType, puids=puids,cursors=['']*len(puids),first=first)
-        print(response)
         errors = response.errors
         tryAgain = False
         if len(errors) > 0:
             tryAgain = self.errorHandler(errors)
         while tryAgain:
-            print(tryAgain)
             first = self.first
             response = self.get_samples_by_namespace(query_names=puids, namespaceType=namespaceType, puids=puids,cursors=['']*len(puids),first=first)
             errors = response.errors
