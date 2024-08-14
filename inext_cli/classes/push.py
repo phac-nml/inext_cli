@@ -141,7 +141,6 @@ class push:
             query = self.query_builder.render(query)
             r = gql_request(self.config)
             response = r.request(query)
-            print(response)
             data = self.parse_create_samples(data,response=response.response)
 
         return data
