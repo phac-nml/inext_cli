@@ -17,11 +17,10 @@ class query_strings:
         return f'projectSample(projectPuid: "{puid}", sampleName: "{sampleName}") {{ createdAt updatedAt description id metadata name puid attachments(after: "{after}", first: {first}) {{ totalCount nodes {{ attachmentUrl byteSize createdAt filename id metadata puid }} pageInfo {{ endCursor hasNextPage hasPreviousPage startCursor }} }} project {{ puid }} }}'
     
     def query_samples_by_group_id(self,id,after,first):
-        return f'samples(groupId: "{id}", after: "{after}", first: {first}) {{  totalCount nodes {{ createdAt updatedAt id name puid }} pageInfo {{ endCursor hasNextPage hasPreviousPage startCursor }}      }} '
+        return f'samples(groupId: "{id}", after: "{after}", first: {first}) {{  totalCount nodes {{ id puid }} pageInfo {{ endCursor hasNextPage hasPreviousPage startCursor }}      }} '
 
     def query_project_by_puid(self,puid,after,first):
         return f'project(puid: "{puid}") {{ createdAt updatedAt description fullName fullPath id name path puid samples(after: "{after}", first: {first}) {{ totalCount nodes {{ id name puid }} pageInfo {{ endCursor hasNextPage hasPreviousPage startCursor }} }} }}'
-    
     
     def query_group_by_puid(self,puid,after,first):
         return f'group(puid: "{puid}") {{ createdAt updatedAt description fullName fullPath id name path puid projects(after: "{after}", first: {first}) {{ totalCount nodes {{ id name puid }} pageInfo {{ endCursor hasNextPage hasPreviousPage startCursor }} }} }}'
@@ -72,6 +71,13 @@ class query_constructor(query_strings):
                     results.append(f'{qname}: {self.query_project_by_puid(puid=puids[idx],after=cursors[idx],first=first)}')
                 else:
                     results.append(f'{qname}: {self.query_group_by_puid(puid=puids[idx],after=cursors[idx],first=first)}')
+        return f'query {{\n {"\n".join(results)}       }}'  
+
+
+    def queryGroupSamples(self,query_names,cursors,ids=[],first=10):
+        results = []
+        for idx,qname in enumerate(query_names):
+            results.append(f'{qname}: {self.query_samples_by_group_id(ids[idx],after=cursors[idx],first=first)}')
         return f'query {{\n {"\n".join(results)}       }}'  
 
     def querySamples(self,id_type,query_names,cursors,sample_ids,project_puids=[],first=10):

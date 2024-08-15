@@ -123,6 +123,12 @@ class pull:
 
         return data
 
+    def get_samples_by_group(self,query_names,cursors,ids,first):
+        r = gql_request(self.config)
+        query = self.query_builder.queryGroupSamples(query_names,cursors,ids=ids,first=first)
+        query = self.query_builder.render(query)
+        return r.request(query)
+    
     def get_samples_by_namespace(self,namespaceType, query_names,cursors,puids,first):
         r = gql_request(self.config)
         query = self.query_builder.queryNamespaces(namespaceType, query_names,cursors,puids=puids,first=first)
@@ -199,7 +205,6 @@ class pull:
 
         return False
 
-    
     def retrieve_sample_data(self,id_type,sample_ids,project_puids=[],first=10):
         #invalid, need both name and project
         if id_type == 'sample_name' and len(project_puids) == 0:
@@ -255,7 +260,27 @@ class pull:
         pd.DataFrame.from_dict(data,orient='index').to_csv(self.config.outputs.sampleIndexFile,sep="\t",header=True,index=False)
         return data
 
+    def parse_group_sample_response(self,data,response):
+        for qname in response:
+            if response[qname] is None:
+                continue
+            elif qname not in data:
+                data[qname] = {
+                    'totalCount':response[qname]['totalCount'],
+                    'samples':{},
+                    'hasNextPage':True,
+                    'cursor':''
+                }
+                
+            data[qname]['hasNextPage'] = response[qname]['pageInfo']['hasNextPage']
+            data[qname]['cursor'] = response[qname]['pageInfo']['endCursor']
 
+            for node in response[qname]['nodes']:
+                puid = node['puid']
+                data[qname]['samples'][puid] = node['id']
+        return data
+
+    
     def parse_namespace_response(self,data,response,namespaceType):
         if namespaceType == 'project':
             namespace_key = 'samples'
@@ -285,7 +310,6 @@ class pull:
                 puid = node['puid']
                 data[qname][namespace_key].add(puid)
         return data
-
 
     def get_pagination(self,data):
         query_names = []
@@ -343,28 +367,69 @@ class pull:
             pageInfo = self.get_pagination(data=data)
         return data
     
+    def retrieve_group_samples(self,group_puids,group_ids,first=10):
+        data = {}
+        for idx,group_puid in enumerate(group_puids):
+            group_id = group_ids[idx]
+            query_names = [group_puid]
+            cursors=['']
+            response = self.get_samples_by_group(query_names,cursors,[group_id],first)
+            errors = response.errors
+            if len(errors) > 0:
+                return data
+            data = self.parse_group_sample_response(data,response.response)
+            pageInfo = self.get_pagination(data=data)
+            while(len(pageInfo['puids']) > 0):
+                cursors=pageInfo['cursors']
+                response = self.get_samples_by_group(query_names,cursors,[group_id],first)
+                errors = response.errors
+                if len(errors) > 0:
+                    return data
+                data = self.parse_group_sample_response(data,response.response)
+                pageInfo = self.get_pagination(data=data)
+        return data
+
     def process_namespace(self,puids,first,namespaceType):
+        
         if namespaceType == 'group':
             project_puids = []
         else:
             project_puids = puids
 
+        self.sample_data = {}
         if namespaceType == 'group':
-            self.group_data = self.retrieve_namespace_data(puids=puids,first=first,namespaceType=namespaceType)  
-            puids = set()
+            self.group_data = self.retrieve_namespace_data(puids=puids,first=first,namespaceType=namespaceType)
+            group_ids = []
+            group_puids = []
+            for k in self.group_data:
+                group_ids.append(self.group_data[k]['id'])
+                group_puids.append(self.group_data[k]['puid'])
+            group_samples = self.retrieve_group_samples(group_puids,group_ids,first)
+            sample_ids = []
+            for group_id in group_samples:
+                sample_ids += list(group_samples[group_id]['samples'].keys())
+            sample_ids = sorted(list(set(sample_ids)))
+            self.sample_data.update(self.retrieve_sample_data(id_type='puid',sample_ids=sample_ids,project_puids=project_puids,first=first))
+            project_puids = []
+            for sample_puid in self.sample_data:
+                project_puids.append(self.sample_data[sample_puid]['project'])
+            self.project_data = self.retrieve_namespace_data(puids=list(set(project_puids)),first=first,namespaceType='project')
+            pd.DataFrame.from_dict(data={'project_puid':project_puids,'sample_puid':list(self.sample_data.keys())},orient='columns').to_csv(self.config.outputs.projectIndexFile,sep="\t",header=True,index=False)
+            
             data = {
                 'group_puid':[],
-                'project_puid':[]
+                'project_puid':[],
+                'sample_puid':[]
             }
-            for group_id in self.group_data:
-                data['group_puid'] += [group_id] * len(self.group_data[group_id]['projects'])
-                data['project_puid'] += self.group_data[group_id]['projects']
-                puids = puids | self.group_data[group_id]['projects']
-            puids = sorted(list(puids))
-            project_puids = puids
+            for group_id in group_samples:
+                for sample_puid in group_samples[group_id]['samples']:
+                    project_puid = self.sample_data[sample_puid]['project']
+                    data['group_puid'].append(group_id)
+                    data['project_puid'].append(project_puid)
+                    data['sample_puid'].append(sample_puid)
             pd.DataFrame.from_dict(data,orient='columns').to_csv(self.config.outputs.groupIndexFile,sep="\t",header=True,index=False)
 
-        if len(project_puids) > 0:
+        elif namespaceType == 'project':
             self.project_data = self.retrieve_namespace_data(puids=list(project_puids),first=first,namespaceType='project')
             samples = {}
             for project_id in self.project_data:
@@ -373,7 +438,7 @@ class pull:
 
             sample_ids=list(samples.keys())
             project_puids=list(samples.values())
-            self.sample_data = {}
+            
             if first != self.first:
                 first = self.first
             pd.DataFrame.from_dict(data={'project_puid':project_puids,'sample_puid':sample_ids},orient='columns').to_csv(self.config.outputs.projectIndexFile,sep="\t",header=True,index=False)
