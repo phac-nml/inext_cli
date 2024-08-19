@@ -12,6 +12,7 @@
   * [Configuration and Settings](#configuration-and-settings)
     + [Push](#push)
     + [Pull](#pull)
+    + [Download](#download)
 - [Troubleshooting and FAQs](#troubleshooting-and-faqs)
 - [Contact](#contact)
 
