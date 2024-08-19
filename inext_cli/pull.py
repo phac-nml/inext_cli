@@ -67,9 +67,6 @@ def run_pull(run_config,summary=False):
             pass
 
     
-
-
-
 def run(cmd_args=None):
     if cmd_args is None:
         parser = add_args()

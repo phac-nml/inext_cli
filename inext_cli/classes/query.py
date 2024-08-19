@@ -86,10 +86,10 @@ class query_constructor(query_strings):
         if id_type == 'name' and len(project_puids) == 0:
             return
         for idx,qname in enumerate(query_names):
-            if id_type == 'puid':
+            if id_type == 'sample_puid':
                 results.append(f'{qname}: {self.query_individual_sample_by_puid(after=cursors[idx],first=first,puid=sample_ids[idx]) }')
             else:
-                results.append(f'{qname}: {self.query_individual_sample_by_name(after=cursors[idx],first=first,sampleName=sample_ids[idx],puid=project_puids[project_puids]) }')
+                results.append(f'{qname}: {self.query_individual_sample_by_name(after=cursors[idx],first=first,sampleName=sample_ids[idx],puid=project_puids) }')
         return f'query {{\n {"\n".join(results)}       }}'
     
     def queryAttachements(self,query_names,ids):
