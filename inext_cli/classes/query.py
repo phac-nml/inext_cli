@@ -63,14 +63,15 @@ class query_constructor(query_strings):
         for idx,qname in enumerate(query_names):
             if num_puid == 0:
                 if namespaceType == 'project':
-                    results.append(f'{qname}: {self.query_projects(after=cursors[idx],first=first)}')
+                    r = self.query_projects(after=cursors[idx],first=first)
                 else:
-                    results.append(f'{qname}: {self.query_groups(after=cursors[idx],first=first)}')                     
+                    r = self.query_groups(after=cursors[idx],first=first)                
             else:
                 if namespaceType == 'project':
-                    results.append(f'{qname}: {self.query_project_by_puid(puid=puids[idx],after=cursors[idx],first=first)}')
+                    r = self.query_project_by_puid(puid=puids[idx],after=cursors[idx],first=first)
                 else:
-                    results.append(f'{qname}: {self.query_group_by_puid(puid=puids[idx],after=cursors[idx],first=first)}')
+                    r = self.query_group_by_puid(puid=puids[idx],after=cursors[idx],first=first)
+            results.append(f'{qname}: {r}')
         nl = "\n" #f-string work around
         results = "\n".join(results)
         return f'query {{{nl} {results}       }}'  
@@ -79,7 +80,8 @@ class query_constructor(query_strings):
     def queryGroupSamples(self,query_names,cursors,ids=[],first=10):
         results = []
         for idx,qname in enumerate(query_names):
-            results.append(f'{qname}: {self.query_samples_by_group_id(ids[idx],after=cursors[idx],first=first)}')
+            r = self.query_samples_by_group_id(ids[idx],after=cursors[idx],first=first)
+            results.append(f'{qname}: {r}')
         nl = "\n"  
         results = "\n".join(results)
         return f'query {{{nl} {results}       }}'  
@@ -91,9 +93,10 @@ class query_constructor(query_strings):
             return
         for idx,qname in enumerate(query_names):
             if id_type == 'sample_puid':
-                results.append(f'{qname}: {self.query_individual_sample_by_puid(after=cursors[idx],first=first,puid=sample_ids[idx]) }')
+                r = self.query_individual_sample_by_puid(after=cursors[idx],first=first,puid=sample_ids[idx])
             else:
-                results.append(f'{qname}: {self.query_individual_sample_by_name(after=cursors[idx],first=first,sampleName=sample_ids[idx],puid=project_puids) }')
+                r = self.query_individual_sample_by_name(after=cursors[idx],first=first,sampleName=sample_ids[idx],puid=project_puids) 
+            results.append(f'{qname}: { r }')
         nl = "\n"
         results = "\n".join(results)
         return f'query {{{nl} {results}       }}'  
@@ -101,7 +104,8 @@ class query_constructor(query_strings):
     def queryAttachements(self,query_names,ids):
         results = []
         for idx,qname in enumerate(query_names):
-            results.append(f'{qname}: {self.query_attachment(id=ids[idx]) }')
+            r = self.query_attachment(id=ids[idx])
+            results.append(f'{qname}: { r }')
         nl = "\n"
         results = "\n".join(results)
         return f'query {{{nl} {results}       }}'  
