@@ -71,14 +71,18 @@ class query_constructor(query_strings):
                     results.append(f'{qname}: {self.query_project_by_puid(puid=puids[idx],after=cursors[idx],first=first)}')
                 else:
                     results.append(f'{qname}: {self.query_group_by_puid(puid=puids[idx],after=cursors[idx],first=first)}')
-        return f'query {{\n {"\n".join(results)}       }}'  
+        nl = "\n" #f-string work around
+        results = "\n".join(results)
+        return f'query {{{nl} {results}       }}'  
 
 
     def queryGroupSamples(self,query_names,cursors,ids=[],first=10):
         results = []
         for idx,qname in enumerate(query_names):
             results.append(f'{qname}: {self.query_samples_by_group_id(ids[idx],after=cursors[idx],first=first)}')
-        return f'query {{\n {"\n".join(results)}       }}'  
+        nl = "\n"  
+        results = "\n".join(results)
+        return f'query {{{nl} {results}       }}'  
 
     def querySamples(self,id_type,query_names,cursors,sample_ids,project_puids=[],first=10):
         results = []
@@ -90,37 +94,54 @@ class query_constructor(query_strings):
                 results.append(f'{qname}: {self.query_individual_sample_by_puid(after=cursors[idx],first=first,puid=sample_ids[idx]) }')
             else:
                 results.append(f'{qname}: {self.query_individual_sample_by_name(after=cursors[idx],first=first,sampleName=sample_ids[idx],puid=project_puids) }')
-        return f'query {{\n {"\n".join(results)}       }}'
+        nl = "\n"
+        results = "\n".join(results)
+        return f'query {{{nl} {results}       }}'  
     
     def queryAttachements(self,query_names,ids):
         results = []
         for idx,qname in enumerate(query_names):
             results.append(f'{qname}: {self.query_attachment(id=ids[idx]) }')
-        return f'query {{\n {"\n".join(results)}       }}'
+        nl = "\n"
+        results = "\n".join(results)
+        return f'query {{{nl} {results}       }}'  
 
     def createSamples(self,query_names, sample_ids,project_puids):
         results = []
         for idx,qname in enumerate(query_names):
-            results.append(f'{qname}: {self.mutation_create_sample(name=sample_ids[idx],puid=project_puids[idx],desc='') }')
-        return f'mutation {{\n {"\n".join(results)}       }}'
+            r = self.mutation_create_sample(name=sample_ids[idx],puid=project_puids[idx],desc='') 
+            results.append(f'{qname}: {r}')
+        
+        nl = "\n"
+        results = "\n".join(results)
+        return f'mutation {{{nl} {results}       }}'
     
     def updateSamples(self,query_names, sample_ids,metadata):
         results = []
         for idx,qname in enumerate(query_names):
-            results.append(f'{qname}: {self.mutation_update_sample_metadata(puid=sample_ids[idx],metadata=metadata[idx]) }')
-        return f'mutation {{\n {"\n".join(results)}       }}'
+            r = self.mutation_update_sample_metadata(puid=sample_ids[idx],metadata=metadata[idx]) 
+            results.append(f'{qname}: {r}')
+        nl = "\n"
+        results = "\n".join(results)
+        return f'mutation {{{nl} {results}       }}'
 
     def createUploads(self,query_names,byteSizes,checksums,contentTypes,filenames):
         results = []
         for idx,qname in enumerate(query_names):
-            results.append(f'{qname}: {self.mutation_create_direct_upload(byteSize=byteSizes[idx],checksum=checksums[idx],contentType=contentTypes[idx],filename=filenames[idx]) }')
-        return f'mutation {{\n {"\n".join(results)}       }}'
+            r = self.mutation_create_direct_upload(byteSize=byteSizes[idx],checksum=checksums[idx],contentType=contentTypes[idx],filename=filenames[idx])
+            results.append(f'{qname}: { r }')
+        nl = "\n"
+        results = "\n".join(results)
+        return f'mutation {{{nl} {results}       }}'
 
     def createAttachments(self,query_names,signedBlobIDs,puids):
         results = []
         for idx,qname in enumerate(query_names):
-            results.append(f'{qname}: {self.mutation_attach_file_to_sample(puid=puids[idx],signedBlobIDs=signedBlobIDs[idx]) }')
-        return f'mutation {{\n {"\n".join(results)}       }}'
+            r = self.mutation_attach_file_to_sample(puid=puids[idx],signedBlobIDs=signedBlobIDs[idx])
+            results.append(f'{qname}: { r }')
+        nl = "\n"
+        results = "\n".join(results)
+        return f'mutation {{{nl} {results}       }}'
 
 
     def render(self,query_string):

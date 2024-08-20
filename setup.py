@@ -33,7 +33,7 @@ setup(
     name='inext_cli',
     include_package_data=True,
     version=__version__,
-    python_requires='>=3.12.4,<4',
+    python_requires='>=3.8.2,<4',
     setup_requires=['pytest-runner'],
     tests_require=['pytest'],
     packages=find_packages(exclude=['tests']),
@@ -58,7 +58,10 @@ setup(
         'openpyxl>=3.1.4',
         'pycurl>=7.45.3',
         'gql>=3.5.0',
-        'aiohttp>=3.9.5'
+        'aiohttp>=3.9.5',
+        'requests',
+        'requests_toolbelt'
+
 
     ],
 
