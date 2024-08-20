@@ -71,7 +71,7 @@ class query_constructor(query_strings):
                     r = self.query_project_by_puid(puid=puids[idx],after=cursors[idx],first=first)
                 else:
                     r = self.query_group_by_puid(puid=puids[idx],after=cursors[idx],first=first)
-            results.append(f'{qname}: {r}')
+            results.append(f'{qname}: { r }')
         nl = "\n" #f-string work around
         results = "\n".join(results)
         return f'query {{{nl} {results}       }}'  
@@ -81,7 +81,7 @@ class query_constructor(query_strings):
         results = []
         for idx,qname in enumerate(query_names):
             r = self.query_samples_by_group_id(ids[idx],after=cursors[idx],first=first)
-            results.append(f'{qname}: {r}')
+            results.append(f'{qname}: { r }')
         nl = "\n"  
         results = "\n".join(results)
         return f'query {{{nl} {results}       }}'  
@@ -114,7 +114,7 @@ class query_constructor(query_strings):
         results = []
         for idx,qname in enumerate(query_names):
             r = self.mutation_create_sample(name=sample_ids[idx],puid=project_puids[idx],desc='') 
-            results.append(f'{qname}: {r}')
+            results.append(f'{qname}: { r }')
         
         nl = "\n"
         results = "\n".join(results)
@@ -124,7 +124,7 @@ class query_constructor(query_strings):
         results = []
         for idx,qname in enumerate(query_names):
             r = self.mutation_update_sample_metadata(puid=sample_ids[idx],metadata=metadata[idx]) 
-            results.append(f'{qname}: {r}')
+            results.append(f'{qname}: { r }')
         nl = "\n"
         results = "\n".join(results)
         return f'mutation {{{nl} {results}       }}'
