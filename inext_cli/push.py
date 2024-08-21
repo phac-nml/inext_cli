@@ -74,6 +74,8 @@ def run(cmd_args=None):
     if run_config_file is not None:
         with open(run_config_file) as fh:
             input_config = json.loads(fh.read())
+    if 'num_workers' not in input_config:
+        input_config['workers'] = 1
     num_workers = input_config['workers']
     outputs = analysisDir(baseDir=analysis_parameters['outdir'],
                           dataDir=os.path.join(analysis_parameters['outdir'],"data"),

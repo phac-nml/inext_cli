@@ -138,6 +138,7 @@ class push:
 
         for idx,bs in enumerate(batch_samples):
             query = self.query_builder.createSamples(query_names=batch_query_names[idx], sample_ids=bs,project_puids=batch_projects[idx])
+            print(query)
             query = self.query_builder.render(query)
             r = gql_request(self.config)
             response = r.request(query)
@@ -214,8 +215,10 @@ class push:
 
     def run(self):
         data = self.prep_metadata()
+        print(self.create)
         if self.create:
             data = self.create_samples(data)
+        print(data)
         if not self.skip_meta:
             self.upload_metadata(data)
 

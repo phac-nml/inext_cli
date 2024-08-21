@@ -42,13 +42,13 @@ class query_strings:
         return f'updateSampleMetadata(input: {{ metadata: {{{metadata}}}, samplePuid: "{puid}"}}) {{ clientMutationId errors status }}'
 
     def mutation_create_sample(self,name,desc,puid):
-        return f'createSample(input: {{ name: "{name}" description: "{desc}", projectPuid: "{puid}" }}) {{ clientMutationId errors sample {{ name puid }} }}'
+        return f'createSample(input: {{ name: "{name}" description: "{desc}", projectPuid: "{puid}" }}) {{ clientMutationId errors {{ message path }} sample {{ id name puid }} }}'
 
     def mutation_create_direct_upload(self,byteSize,checksum,contentType,filename):
         return f' createDirectUpload( input: {{ byteSize: {byteSize}, checksum: "{checksum}", contentType: "{contentType}", filename: "{filename}" }} ) {{ clientMutationId directUpload {{ blobId headers signedBlobId url }} }}'
 
     def mutation_attach_file_to_sample(self,signedBlobIDs,puid):
-        return f'attachFilesToSample(input: {{ files: {signedBlobIDs}, samplePuid: "{puid}" }}) {{ clientMutationId errors status }}'
+        return f'attachFilesToSample(input: {{ files: {signedBlobIDs}, samplePuid: "{puid}" }}) {{ clientMutationId errors {{ message path }} status }}'
 
 
 

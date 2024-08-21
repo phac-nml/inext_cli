@@ -85,8 +85,10 @@ class sendFile:
         for puid in data:
             data[puid] = f'[{",".join(data[puid])}]'
         query = self.query_builder.createAttachments(query_names=list(data.keys()), puids=list(data.keys()),signedBlobIDs=list(data.values()))
+        print(query)
         query = self.query_builder.render(query)
         response = self.request(query)
+        print(response)
 
 
 
