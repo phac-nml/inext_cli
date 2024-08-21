@@ -7,7 +7,7 @@ from inext_cli.classes.query import query_constructor
 from inext_cli.classes.connect import gql_request
 import time
 import pandas as pd
-
+import numpy as np
 class push:
     status = True
     def __init__(self, config):
@@ -26,6 +26,8 @@ class push:
                           skip_rows=self.config.skip_rows,restrict=self.skip_meta)
         self.status = ss.status
         self.df = ss.df
+        self.df = self.df.replace('', np.nan).dropna(subset=[self.id_col])
+
         self.wait_time = 1
         self.batch_size = self.config.batch_size
         if not self.status:
@@ -49,7 +51,7 @@ class push:
 
         if not self.status:
             return
-
+        print(self.df)
         self.sample_ids = list(self.df[self.id_col])
 
         
@@ -215,10 +217,8 @@ class push:
 
     def run(self):
         data = self.prep_metadata()
-        print(self.create)
         if self.create:
             data = self.create_samples(data)
-        print(data)
         if not self.skip_meta:
             self.upload_metadata(data)
 

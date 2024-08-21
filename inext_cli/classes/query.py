@@ -28,7 +28,6 @@ class query_strings:
     def query_sample_attachment(self,id):
         return f'node(id: "{id}") {{ id ... on Attachment {{ attachmentUrl byteSize createdAt filename id metadata puid updatedAt }} }} '
 
-
     def query_projects(self,after,first):
         return f'projects(after: "{after}", first: {first}) {{ totalCount nodes {{ createdAt updatedAt id name puid  }} pageInfo {{ endCursor hasNextPage hasPreviousPage startCursor }} }}'
     
@@ -39,7 +38,7 @@ class query_strings:
         return f'node(id: "{id}") {{ id ... on Attachment {{ attachmentUrl byteSize createdAt filename id metadata puid updatedAt }} }} '
 
     def mutation_update_sample_metadata(self,puid,metadata):
-        return f'updateSampleMetadata(input: {{ metadata: {{{metadata}}}, samplePuid: "{puid}"}}) {{ clientMutationId errors status }}'
+        return f'updateSampleMetadata(input: {{ metadata: {{{metadata}}}, samplePuid: "{puid}"}}) {{ clientMutationId errors {{ message path }} status }}'
 
     def mutation_create_sample(self,name,desc,puid):
         return f'createSample(input: {{ name: "{name}" description: "{desc}", projectPuid: "{puid}" }}) {{ clientMutationId errors {{ message path }} sample {{ id name puid }} }}'
